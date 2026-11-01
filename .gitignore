@@ -3,3 +3,9 @@
 *.private.*
 credentials*.json
 __pycache__/
+.venv/
+.verify-venv/
+*.egg-info/
+*.pyc
+build/
+dist/

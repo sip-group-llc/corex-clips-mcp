@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "corex_clips_local": {
+      "command": "D:\\Ferramentas\\corex-clips-mcp\\.venv\\Scripts\\corex-clips-mcp.exe",
+      "args": ["mcp"]
+    }
+  }
+}

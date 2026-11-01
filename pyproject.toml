@@ -1,0 +1,20 @@
+[build-system]
+requires = ["setuptools==84.2.1"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "corex-clips-mcp"
+version = "1.1.0"
+description = "Scoped CoreX Clips MCP client with confirmed local video upload"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = ["mcp==2.3.0", "httpx==0.28.1", "jsonschema==4.24.0"]
+
+[project.scripts]
+corex-clips-mcp = "corex_clips_mcp.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+corex_clips_mcp = ["catalog.json"]

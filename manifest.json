@@ -1,8 +1,82 @@
 {
   "name": "corex-clips",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "description": "Public CoreX Clips MCP contract. No backend code or credentials.",
   "tools": [
+    {
+      "name": "clips_list_videos",
+      "description": "Lista os vídeos do workspace por projeto, nome e estado. Use para recuperar o contexto ou conferir se um upload foi registrado após uma resposta incerta, antes de tentar novamente.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "projectId": {
+            "type": "string",
+            "description": "Projeto de destino.",
+            "minLength": 1,
+            "maxLength": 200
+          },
+          "search": {
+            "type": "string",
+            "description": "Buscar pelo título do vídeo ou nome do projeto.",
+            "maxLength": 200
+          },
+          "grupo": {
+            "type": "string",
+            "description": "Estado do processamento.",
+            "enum": [
+              "andamento",
+              "pronto",
+              "falha"
+            ]
+          },
+          "sort": {
+            "type": "string",
+            "description": "Ordem da listagem.",
+            "enum": [
+              "recent",
+              "oldest",
+              "clips-desc",
+              "duration-desc",
+              "name-asc"
+            ]
+          },
+          "period": {
+            "type": "string",
+            "description": "Janela de criação.",
+            "enum": [
+              "today",
+              "7d",
+              "30d",
+              "90d"
+            ]
+          },
+          "page": {
+            "type": "integer",
+            "description": "Página começando em 1.",
+            "minimum": 1
+          },
+          "pageSize": {
+            "type": "integer",
+            "description": "Até 50 vídeos por página.",
+            "minimum": 1,
+            "maximum": 50
+          }
+        },
+        "required": [],
+        "additionalProperties": false
+      },
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": false
+      },
+      "_meta": {
+        "corex-clips/scopes": [
+          "read"
+        ]
+      }
+    },
     {
       "name": "clips_list_projects",
       "description": "Lista os projetos do workspace. Todo vídeo pertence a um projeto, então este costuma ser o primeiro passo: sem projectId não há onde ingerir.",
@@ -1976,6 +2050,339 @@
       "_meta": {
         "corex-clips/scopes": [
           "edit"
+        ]
+      }
+    },
+    {
+      "name": "clips_upload_start",
+      "description": "Prepara o envio confirmado de um vídeo local. Retorna URL assinada simples ou instruções multipart; os bytes vão diretamente ao armazenamento. Não envie credenciais MCP para a URL assinada.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "projectId": {
+            "type": "string",
+            "description": "Projeto de destino no workspace autenticado.",
+            "minLength": 1,
+            "maxLength": 200
+          },
+          "filename": {
+            "type": "string",
+            "description": "Nome do vídeo local, sem conteúdo do arquivo.",
+            "minLength": 1,
+            "maxLength": 255
+          },
+          "contentType": {
+            "type": "string",
+            "description": "MIME do vídeo. O servidor valida formato e extensão.",
+            "minLength": 1,
+            "maxLength": 100
+          },
+          "sizeBytes": {
+            "type": "integer",
+            "description": "Tamanho exato do vídeo em bytes.",
+            "minimum": 1,
+            "maximum": 15000000000
+          },
+          "confirmed": {
+            "type": "boolean",
+            "const": true,
+            "description": "O usuário autorizou enviar e processar este vídeo."
+          },
+          "captionsEnabled": {
+            "type": "boolean",
+            "description": "Escolha explícita deste envio; false mantém a ausência de legenda queimada."
+          },
+          "layoutMode": {
+            "type": "string",
+            "description": "Enquadramento do lote.",
+            "enum": [
+              "AUTO",
+              "STACKED"
+            ]
+          },
+          "preset": {
+            "type": "string",
+            "description": "Modelo de corte existente no catálogo. O servidor recusa IDs desconhecidos.",
+            "maxLength": 100
+          },
+          "quantity": {
+            "type": "integer",
+            "description": "Quantidade solicitada de cortes.",
+            "minimum": 1,
+            "maximum": 20
+          },
+          "minDurationSec": {
+            "type": "integer",
+            "description": "Duração mínima por corte, em segundos.",
+            "minimum": 5,
+            "maximum": 180
+          },
+          "maxDurationSec": {
+            "type": "integer",
+            "description": "Duração máxima por corte, em segundos.",
+            "minimum": 5,
+            "maximum": 180
+          },
+          "fillMode": {
+            "type": "string",
+            "description": "Preenchimento do vídeo.",
+            "enum": [
+              "COVER",
+              "CONTAIN",
+              "CONTAIN_BLUR"
+            ]
+          }
+        },
+        "required": [
+          "projectId",
+          "filename",
+          "contentType",
+          "sizeBytes",
+          "confirmed"
+        ],
+        "additionalProperties": false
+      },
+      "annotations": {
+        "readOnlyHint": false,
+        "destructiveHint": false,
+        "idempotentHint": false,
+        "openWorldHint": false
+      },
+      "_meta": {
+        "corex-clips/scopes": [
+          "generate"
+        ]
+      }
+    },
+    {
+      "name": "clips_upload_part_url",
+      "description": "Obtém a URL assinada de uma parte do upload em andamento. Use somente a key e uploadId retornados pelo início; não registra o vídeo nem inicia outro lote.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "key": {
+            "type": "string",
+            "description": "Key exata retornada por clips_upload_start; nunca invente nem use outro workspace.",
+            "minLength": 1,
+            "maxLength": 1024
+          },
+          "uploadId": {
+            "type": "string",
+            "description": "Id multipart retornado pelo início.",
+            "minLength": 1,
+            "maxLength": 2048
+          },
+          "sizeBytes": {
+            "type": "integer",
+            "description": "Tamanho exato do vídeo em bytes.",
+            "minimum": 1,
+            "maximum": 15000000000
+          },
+          "partNumber": {
+            "type": "integer",
+            "description": "Número desta parte, começando em 1.",
+            "minimum": 1,
+            "maximum": 10000
+          }
+        },
+        "required": [
+          "key",
+          "uploadId",
+          "sizeBytes",
+          "partNumber"
+        ],
+        "additionalProperties": false
+      },
+      "annotations": {
+        "readOnlyHint": false,
+        "destructiveHint": false,
+        "idempotentHint": false,
+        "openWorldHint": false
+      },
+      "_meta": {
+        "corex-clips/scopes": [
+          "generate"
+        ]
+      }
+    },
+    {
+      "name": "clips_upload_complete",
+      "description": "Finaliza o vídeo enviado e inicia o processamento normal com a cota do workspace. Confirme somente após todos os bytes chegarem. Em resposta incerta, consulte o projeto antes de repetir.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "projectId": {
+            "type": "string",
+            "description": "Projeto de destino no workspace autenticado.",
+            "minLength": 1,
+            "maxLength": 200
+          },
+          "filename": {
+            "type": "string",
+            "description": "Nome do vídeo local, sem conteúdo do arquivo.",
+            "minLength": 1,
+            "maxLength": 255
+          },
+          "contentType": {
+            "type": "string",
+            "description": "MIME do vídeo. O servidor valida formato e extensão.",
+            "minLength": 1,
+            "maxLength": 100
+          },
+          "sizeBytes": {
+            "type": "integer",
+            "description": "Tamanho exato do vídeo em bytes.",
+            "minimum": 1,
+            "maximum": 15000000000
+          },
+          "confirmed": {
+            "type": "boolean",
+            "const": true,
+            "description": "O usuário autorizou enviar e processar este vídeo."
+          },
+          "captionsEnabled": {
+            "type": "boolean",
+            "description": "Escolha explícita deste envio; false mantém a ausência de legenda queimada."
+          },
+          "layoutMode": {
+            "type": "string",
+            "description": "Enquadramento do lote.",
+            "enum": [
+              "AUTO",
+              "STACKED"
+            ]
+          },
+          "preset": {
+            "type": "string",
+            "description": "Modelo de corte existente no catálogo. O servidor recusa IDs desconhecidos.",
+            "maxLength": 100
+          },
+          "quantity": {
+            "type": "integer",
+            "description": "Quantidade solicitada de cortes.",
+            "minimum": 1,
+            "maximum": 20
+          },
+          "minDurationSec": {
+            "type": "integer",
+            "description": "Duração mínima por corte, em segundos.",
+            "minimum": 5,
+            "maximum": 180
+          },
+          "maxDurationSec": {
+            "type": "integer",
+            "description": "Duração máxima por corte, em segundos.",
+            "minimum": 5,
+            "maximum": 180
+          },
+          "fillMode": {
+            "type": "string",
+            "description": "Preenchimento do vídeo.",
+            "enum": [
+              "COVER",
+              "CONTAIN",
+              "CONTAIN_BLUR"
+            ]
+          },
+          "key": {
+            "type": "string",
+            "description": "Key exata retornada por clips_upload_start; nunca invente nem use outro workspace.",
+            "minLength": 1,
+            "maxLength": 1024
+          },
+          "uploadId": {
+            "type": "string",
+            "description": "Id multipart retornado pelo início.",
+            "minLength": 1,
+            "maxLength": 2048
+          },
+          "parts": {
+            "type": "array",
+            "description": "Partes concluídas do multipart; ausente no envio simples.",
+            "minItems": 1,
+            "maxItems": 10000,
+            "items": {
+              "description": "",
+              "type": "object",
+              "properties": {
+                "part_number": {
+                  "type": "integer",
+                  "description": "Número da parte.",
+                  "minimum": 1,
+                  "maximum": 10000
+                },
+                "etag": {
+                  "type": "string",
+                  "description": "ETag retornado pelo armazenamento, preservando as aspas.",
+                  "minLength": 1,
+                  "maxLength": 200,
+                  "pattern": "^\"?[A-Za-z0-9-]+\"?$"
+                }
+              },
+              "required": [
+                "part_number",
+                "etag"
+              ],
+              "additionalProperties": false
+            }
+          }
+        },
+        "required": [
+          "projectId",
+          "filename",
+          "contentType",
+          "sizeBytes",
+          "confirmed",
+          "key"
+        ],
+        "additionalProperties": false
+      },
+      "annotations": {
+        "readOnlyHint": false,
+        "destructiveHint": false,
+        "idempotentHint": false,
+        "openWorldHint": false
+      },
+      "_meta": {
+        "corex-clips/scopes": [
+          "generate"
+        ]
+      }
+    },
+    {
+      "name": "clips_upload_abort",
+      "description": "Cancela somente o multipart ainda em andamento. Não apaga vídeos registrados nem arquivos de outros workspaces; exige a key e uploadId originais.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "key": {
+            "type": "string",
+            "description": "Key exata retornada por clips_upload_start; nunca invente nem use outro workspace.",
+            "minLength": 1,
+            "maxLength": 1024
+          },
+          "uploadId": {
+            "type": "string",
+            "description": "Id multipart retornado pelo início.",
+            "minLength": 1,
+            "maxLength": 2048
+          }
+        },
+        "required": [
+          "key",
+          "uploadId"
+        ],
+        "additionalProperties": false
+      },
+      "annotations": {
+        "readOnlyHint": false,
+        "destructiveHint": false,
+        "idempotentHint": false,
+        "openWorldHint": false
+      },
+      "_meta": {
+        "corex-clips/scopes": [
+          "generate"
         ]
       }
     }
