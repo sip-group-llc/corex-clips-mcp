@@ -1,0 +1,11 @@
+{
+  "mcpServers": {
+    "corex_clips": {
+      "type": "http",
+      "url": "https://clips.corex11.tech/api/mcp",
+      "headers": {
+        "Authorization": "Bearer ${COREX_CLIPS_MCP_TOKEN}"
+      }
+    }
+  }
+}

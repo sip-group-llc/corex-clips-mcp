@@ -1,0 +1,7 @@
+{
+  "name": "CoreX Clips",
+  "url": "https://clips.corex11.tech/api/mcp",
+  "transport": "streamable-http",
+  "scopes": ["read", "edit", "generate", "render"],
+  "credential_environment_variable": "COREX_CLIPS_MCP_TOKEN"
+}
