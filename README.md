@@ -103,3 +103,9 @@ Exclusão de mídia e publicação em redes sociais não são ferramentas deste 
 O contrato e as configurações podem ser examinados sem autenticação; dados e
 operações exigem acesso válido ao workspace. Esta separação não representa uma
 garantia absoluta de segurança ou de disponibilidade de fornecedores externos.
+
+## Skills de operação
+
+Instruções para usar o serviço hospedado com a conexão da sua conta:
+
+- [corex-clips](.agents/skills/corex-clips/SKILL.md)
